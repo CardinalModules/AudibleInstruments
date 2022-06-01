@@ -33,7 +33,9 @@ struct Braids : Module {
 	braids::VcoJitterSource jitter_source;
 	braids::SignatureWaveshaper ws;
 
+#ifndef BRAIDS_ALWAYS_LOW_CPU_MODE
 	dsp::SampleRateConverter<1> src;
+#endif
 	dsp::DoubleRingBuffer<dsp::Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 	bool lowCpu = false;
@@ -123,12 +125,15 @@ struct Braids : Module {
 				render_buffer[i] = stmlib::Mix(sample, warped, signature);
 			}
 
+#ifndef BRAIDS_ALWAYS_LOW_CPU_MODE
 			if (lowCpu) {
+#endif
 				for (int i = 0; i < 24; i++) {
 					dsp::Frame<1> f;
 					f.samples[0] = render_buffer[i] / 32768.0;
 					outputBuffer.push(f);
 				}
+#ifndef BRAIDS_ALWAYS_LOW_CPU_MODE
 			}
 			else {
 				// Sample rate convert
@@ -143,6 +148,7 @@ struct Braids : Module {
 				src.process(in, &inLen, outputBuffer.endData(), &outLen);
 				outputBuffer.endIncr(outLen);
 			}
+#endif
 		}
 
 		// Output

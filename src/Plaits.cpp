@@ -49,7 +49,9 @@ struct Plaits : Module {
 	char shared_buffer[16][16384] = {};
 	float triPhase = 0.f;
 
+#ifndef PLAITS_ALWAYS_LOW_CPU_MODE
 	dsp::SampleRateConverter<16 * 2> outputSrc;
+#endif
 	dsp::DoubleRingBuffer<dsp::Frame<16 * 2>, 256> outputBuffer;
 	bool lowCpu = false;
 
@@ -229,10 +231,13 @@ struct Plaits : Module {
 			}
 
 			// Convert output
+#ifndef PLAITS_ALWAYS_LOW_CPU_MODE
 			if (lowCpu) {
+#endif
 				int len = std::min((int) outputBuffer.capacity(), blockSize);
 				std::memcpy(outputBuffer.endData(), outputFrames, len * sizeof(outputFrames[0]));
 				outputBuffer.endIncr(len);
+#ifndef PLAITS_ALWAYS_LOW_CPU_MODE
 			}
 			else {
 				outputSrc.setRates(48000, (int) args.sampleRate);
@@ -242,6 +247,7 @@ struct Plaits : Module {
 				outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
 				outputBuffer.endIncr(outLen);
 			}
+#endif
 		}
 
 		// Set output
